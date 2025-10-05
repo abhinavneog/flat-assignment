@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSE FST Project</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 800px; margin: 50px auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); background-color: #f9f9f9; }
+        h1 { text-align: center; color: #1e88e5; }
+        .controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px; padding: 20px; border: 1px dashed #b3e5fc; border-radius: 6px; background-color: #e3f2fd; }
+        label { font-weight: bold; color: #0d47a1; }
+        select, input[type="text"], button { padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
+        button { background-color: #1e88e5; color: white; cursor: pointer; border: none; transition: background-color 0.3s; }
+        button:hover { background-color: #0d47a1; }
+        #output-panel { margin-top: 25px; padding: 20px; border: 2px solid #388e3c; background-color: #e8f5e9; border-radius: 6px; }
+        .result-label { font-weight: bold; color: #1b5e20; margin-bottom: 5px; display: block; font-size: 1.1em; }
+        #fstOutput { font-family: monospace; font-size: 1em; white-space: pre-wrap; word-wrap: break-word; line-height: 1.4; color: #333; }
+    </style>
+</head>
+<body>
+    <h1>CSE FST & Automata Project Demonstrator (Flask)</h1>
+
+    <div class="controls">
+        <label for="operationSelect">Select FST/FSA Operation:</label>
+        <select id="operationSelect" onchange="togglePatternInput()">
+            {% for op_value, op_name in operations %}
+                <option value="{{ op_value }}">{{ op_name }}</option>
+            {% endfor %}
+        </select>
+        
+        <label for="wordInput">Enter Input String (Text to Search/Process):</label>
+        <input type="text" id="wordInput" placeholder="Input (e.g., 'hello', '123', 'CSESociety')">
+        
+        <div id="patternInputGroup" style="display:none;">
+            <label for="patternInput">Enter Substring Pattern:</label>
+            <input type="text" id="patternInput" placeholder="Pattern (e.g., 'project')">
+        </div>
+        
+        <button onclick="processFST()">Run Selected FST</button>
+    </div>
+
+    <div id="output-panel">
+        <span class="result-label">FST Output / Analysis:</span>
+        <pre id="fstOutput">Awaiting input...</pre>
+    </div>
+
+    <script>
+        function togglePatternInput() {
+            const operation = document.getElementById('operationSelect').value;
+            const patternGroup = document.getElementById('patternInputGroup');
+            const wordInput = document.getElementById('wordInput');
+            
+            // Show pattern input only for the substring operation
+            if (operation === 'substring') {
+                patternGroup.style.display = 'block';
+                wordInput.placeholder = "Enter the main text to search within";
+            } else {
+                patternGroup.style.display = 'none';
+                wordInput.placeholder = "Input (e.g., 'hello', '123', 'racecar')";
+            }
+        }
+    
+        function processFST() {
+            const operation = document.getElementById('operationSelect').value;
+            const input = document.getElementById('wordInput').value;
+            const outputElement = document.getElementById('fstOutput');
+            
+            // Get the secondary input (Pattern) only if needed
+            let secondaryInput = '';
+            if (operation === 'substring') {
+                secondaryInput = document.getElementById('patternInput').value;
+            }
+
+            outputElement.textContent = "Processing...";
+
+            fetch('/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    operation: operation, 
+                    input: input,
+                    secondary_input: secondaryInput // Pass the pattern data
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                outputElement.textContent = data.result;
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                outputElement.textContent = 'An error occurred during communication with the server.';
+            });
+        }
+        
+        // Initial call to set the correct state on load
+        document.addEventListener('DOMContentLoaded', togglePatternInput);
+    </script>
+</body>
+</html>
